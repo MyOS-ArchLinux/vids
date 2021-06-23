@@ -1,0 +1,155 @@
+#!/usr/bin/env sh
+
+# check if app installed ; ignores aliases
+has() {
+    case "$(command -v "$1" 2>/dev/null)" in
+        alias*|"") return 1
+    esac
+}
+
+phi() {
+    >&2 printf '    %s , %s , %s     %s\n' "$1" "$2" "$3" "$4"
+}
+
+pht() {
+    >&2 printf '%s\n' "$@"
+}
+
+_input(){
+    if has 'rofi' ; then
+        printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0
+    elif has 'dmenu'; then
+        printf '' | dmenu -p "Search ${VIDSBRND} Video:"
+    else
+        read -r query && echo "${query}"
+    fi
+}
+
+_choose(){
+    if has 'rofi' ; then
+        rofi -dmenu -i -p 'Select Video' -width 90 -i -l 20 -multi-select
+    elif has 'dmenu'; then
+        dmenu -i -p 'Select Video:' -l 20
+    elif has 'fzf'; then
+        fzf --with-nth='1..-3' --multi
+    fi
+}
+
+usage() {
+    pht "Usage:   vids --option query"
+    pht
+    pht "Options:"
+
+    phi -tr "--ytr " "--ytrending " "Get List Youtube Trending"
+    phi -yt "--ytb " "--youtube   " "search using Youtube"
+    phi -pt "--prtb" "--peertube  " "search using PeerTube"
+    phi -bc "--btct" "--bitchute  " "search using BitChute"
+}
+
+# Set Default
+pltfrm="youtube"
+case "$1" in
+    -h |--help)
+            usage && exit 0 ;;
+    -tr|--ytr|--ytrending)
+            pltfrm="ytrending"; shift;;
+    -yt|--ytb|--youtube)
+            pltfrm="youtube"  ; shift;;
+    -pt|--prtb|--peertube)
+            pltfrm="peertube" ; shift;;
+    -bc|--btct|--bitchute)
+            pltfrm="bitchute" ; shift;;
+esac
+
+case "${pltfrm}" in
+    "ytrending")
+            VIDSBRND="Youtube Trending"
+            VIDSMTHD="GET"
+            VIDSPRMT="-G --data-urlencode"
+            VIDSURL="https://www.youtube.com/feed/trending"
+            query="US"
+            VIDSPRMT1="gl"
+            VIDSPRMT2="pbj=1"
+            VIDSHDR1="x-youtube-client-name:1"
+            VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
+            VIDSJSN1=".[1].response"
+            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+             ;;
+    "youtube")
+            VIDSBRND="Youtube"
+            VIDSMTHD="GET"
+            VIDSPRMT="-G --data-urlencode"
+            VIDSURL="https://www.youtube.com/results"
+            VIDSPRMT1="search_query"
+            VIDSPRMT2="pbj=1"
+            VIDSHDR1="x-youtube-client-name:1"
+            VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
+            VIDSJSN1=".[1].response"
+            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+             ;;
+    "peertube")
+            VIDSBRND="PeerTube"
+            VIDSMTHD="GET"
+            VIDSPRMT="-G --data-urlencode"
+            VIDSURL="https://sepiasearch.org/api/v1/search/videos"
+            VIDSPRMT1="search"
+            VIDSPRMT2="count=20"
+            VIDSHDR1=""
+            VIDSHDR2=""
+            VIDSJSN1=".data"
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration: .duration, views: .views, date: .publishedAt, videoURL: .url, }]'
+             ;;
+    "bitchute")
+            BTCTCOKY="$(curl --head "https://www.bitchute.com/" -s -H "referer:https://www.bitchute.com/" \
+                        -H "user-agent:Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0" \
+                        -H "accept-language:en-US, en;q=0.9" -H "accept-encoding:gzip" --compressed \
+                        --cookie-jar - -o /dev/null | awk '/csrftoken/{print $NF}')"
+            VIDSBRND="BitChute"
+            VIDSMTHD="POST"
+            VIDSPRMT="-d"
+            VIDSURL="https://www.bitchute.com/api/search/list/"
+            VIDSPRMT1="query"
+            VIDSPRMT2="csrfmiddlewaretoken=${BTCTCOKY}"
+            VIDSHDR1="cookie: csrftoken=${BTCTCOKY};"
+            VIDSHDR2="referer: https://www.bitchute.com/"
+            VIDSJSN1=".results"
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: .views, date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
+             ;;
+esac
+
+printf '%s' "${VIDSBRND} - Search query: "
+
+if [ -z "$query" ] || [ -n "$1" ]; then
+    if [ -z "$1" ]; then
+        query="$(_input)"
+    else
+        query="$*"
+    fi
+fi
+
+# If no query was passed, exit
+[ -z "${query}" ] && exit 1
+
+echo "${query}"
+
+vids_jsondata=$(curl -X ${VIDSMTHD} "${VIDSURL}" -s \
+    ${VIDSPRMT} "${VIDSPRMT1}=${query}" \
+    ${VIDSPRMT} "${VIDSPRMT2}" \
+    -H "${VIDSHDR1}" -H "${VIDSHDR2}" \
+    -H "user-agent:Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0" \
+    -H "accept-language:en-US, en;q=0.9" \
+    -H "accept-encoding:gzip" --compressed \
+)
+
+vids_jsonvdata=$(printf '%s' "${vids_jsondata}" | jq -r "${VIDSJSN1}" | jq -r "${VIDSJSN2}")
+
+video_url=$(printf '%s' "${vids_jsonvdata}" \
+    | jq -r '.[]| "[\(.channel)] -- \(.title) -- [\(.duration)] -- \(.date) -- \(.videoURL)"' \
+    | _choose \
+    | awk '{print $NF}' \
+)
+
+# If no video was chosen, exit
+[ -z "${video_url}" ] && exit 1
+
+printf '%s\n' ${video_url} | mpv --playlist=-
