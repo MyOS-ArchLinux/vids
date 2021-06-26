@@ -1,6 +1,6 @@
 # vids
 
-This script lets you search videos platforms (YouTube , PeerTube and BitChute) with command line easily.
+A POSIX script that helps you search videos platforms (YouTube , PeerTube and BitChute) with command line easily.
 
 ### Requirements
 - `fzf` / `dmenu` / `rofi` - menu & input 
