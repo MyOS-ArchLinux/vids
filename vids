@@ -27,7 +27,7 @@ _input(){
 
 _choose(){
     if has 'rofi' ; then
-        rofi -dmenu -i -p 'Select Video' -width 90 -i -l 20 -multi-select
+        rofi -dmenu -i -p 'Select Video' -width 90 -i -l 20 -multi-select -no-click-to-exit
     elif has 'dmenu'; then
         dmenu -i -p 'Select Video:' -l 20
     elif has 'fzf'; then
@@ -41,9 +41,9 @@ usage() {
     pht "Options:"
 
     phi -tr "--ytr " "--ytrending " "Get List Youtube Trending"
-    phi -yt "--ytb " "--youtube   " "search using Youtube"
-    phi -pt "--prtb" "--peertube  " "search using PeerTube"
-    phi -bc "--btct" "--bitchute  " "search using BitChute"
+    phi -yt "--ytb " "--youtube   " "Search Youtube"
+    phi -pt "--prtb" "--peertube  " "Search PeerTube"
+    phi -bc "--btct" "--bitchute  " "Search BitChute"
 }
 
 # Set Default
