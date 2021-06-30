@@ -22,9 +22,10 @@ sudo install -m755 vids /usr/local/bin/vids
 vids --option query
 
 Options:
-    -yt , --ytb  , --youtube      search using Youtube
-    -pt , --prtb , --peertube     search using PeerTube
-    -bc , --btct , --bitchute     search using BitChute
+    -tr , --ytr  , --ytrending      Get List Youtube Trending
+    -yt , --ytb  , --youtube        Search Youtube
+    -pt , --prtb , --peertube       Search PeerTube
+    -bc , --btct , --bitchute       Search BitChute
 ```
 ## Note
 You may want to install [mpv-youtube-quality](https://github.com/jgreco/mpv-youtube-quality) to change video quality on the fly , and [mpv_sponsorblock](https://github.com/po5/mpv_sponsorblock) or [mpv_sponsorblock_minimal](https://codeberg.org/jouni/mpv_sponsorblock_minimal) to skip sponsored segments of YouTube videos automatically.
