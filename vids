@@ -48,6 +48,7 @@ usage() {
     phi -yt "--ytb " "--youtube   " "Search Youtube"
     phi -pt "--prtb" "--peertube  " "Search PeerTube"
     phi -bc "--btct" "--bitchute  " "Search BitChute"
+    phi -td "--ted " "--tedtalk   " "Search TED Talks"
 }
 
 case "$1" in
@@ -67,6 +68,8 @@ case "$1" in
             pltfrm="peertube" ; shift;;
     -bc|--btct|--bitchute)
             pltfrm="bitchute" ; shift;;
+    -td|--ted|--tedtalk)
+            pltfrm="tedtalk"  ; shift;;
     -h |--help|--*|-*)
             usage; exit 0 ;;
 esac
@@ -124,6 +127,18 @@ case "${pltfrm}" in
             VIDSHDR2="referer: https://www.bitchute.com/"
             VIDSJSN1=".results"
             VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: .views, date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
+             ;;
+    "tedtalk")
+            VIDSBRND="TED Talks"
+            VIDSMTHD="GET"
+            VIDSPRMT="-G --data-urlencode"
+            VIDSURL="https://ted2srt.org/api/search"
+            VIDSPRMT1="q"
+            VIDSPRMT2=""
+            VIDSHDR1=""
+            VIDSHDR2=""
+            VIDSJSN1=""
+            VIDSJSN2='[ .[] |{ title: .name, channel: "TED", duration: .duration, views: .views, date: .publishedAt, videoURL: "https://ted.com/talks/\(.slug)", }]'
              ;;
 esac
 
