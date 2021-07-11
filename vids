@@ -15,24 +15,28 @@ pht() {
     >&2 printf '%s\n' "$@"
 }
 
+if has 'rofi' ; then
+    vids_menu="rofi"
+elif has 'dmenu'; then
+    vids_menu="dmenu"
+else
+    vids_menu="fzf"
+fi
+
 _input(){
-    if has 'rofi' ; then
-        printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0
-    elif has 'dmenu'; then
-        printf '' | dmenu -p "Search ${VIDSBRND} Video:"
-    else
-        read -r query && echo "${query}"
-    fi
+    case "$vids_menu" in
+        "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Video:" ;;
+        "rofi")  printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0 ;;
+        "fzf")   read -r query && echo "${query}" ;;
+    esac
 }
 
 _choose(){
-    if has 'rofi' ; then
-        rofi -dmenu -i -p 'Select Video' -width 90 -l 20 -multi-select -no-click-to-exit
-    elif has 'dmenu'; then
-        dmenu -i -p 'Select Video:' -l 20
-    elif has 'fzf'; then
-        fzf --with-nth='1..-3' --multi --cycle --header='Select Video:'
-    fi
+    case "$vids_menu" in
+        "dmenu") dmenu -i -p 'Select Video:' -l 20 ;;
+        "rofi")  rofi -dmenu -i -p 'Select Video' -width 90 -l 20 -multi-select -no-click-to-exit ;;
+        "fzf")   fzf --with-nth='1..-3' --multi --cycle --header='Select Video:' ;;
+    esac
 }
 
 usage() {
@@ -46,11 +50,15 @@ usage() {
     phi -bc "--btct" "--bitchute  " "Search BitChute"
 }
 
+case "$1" in
+    "-dmenu"|"--dmenu") vids_menu="dmenu"; shift;;
+    "-rofi"|"--rofi")   vids_menu="rofi" ; shift;;
+    "-fzf"|"--fzf")     vids_menu="fzf"  ; shift;;
+esac
+
 # Set Default
 pltfrm="youtube"
 case "$1" in
-    -h |--help)
-            usage && exit 0 ;;
     -tr|--ytr|--ytrending)
             pltfrm="ytrending"; shift;;
     -yt|--ytb|--youtube)
@@ -59,6 +67,8 @@ case "$1" in
             pltfrm="peertube" ; shift;;
     -bc|--btct|--bitchute)
             pltfrm="bitchute" ; shift;;
+    -h |--help|--*|-*)
+            usage; exit 0 ;;
 esac
 
 case "${pltfrm}" in
@@ -132,6 +142,7 @@ fi
 
 echo "${query}"
 
+# shellcheck disable=SC2086
 vids_jsondata=$(curl -X ${VIDSMTHD} "${VIDSURL}" -s \
     ${VIDSPRMT} "${VIDSPRMT1}=${query}" \
     ${VIDSPRMT} "${VIDSPRMT2}" \
@@ -143,13 +154,16 @@ vids_jsondata=$(curl -X ${VIDSMTHD} "${VIDSURL}" -s \
 
 vids_jsonvdata=$(printf '%s' "${vids_jsondata}" | jq -r "${VIDSJSN1}" | jq -r "${VIDSJSN2}")
 
-video_url=$(printf '%s' "${vids_jsonvdata}" \
-    | jq -r '.[]| "[\(.channel)] -- \(.title) -- [\(.duration)] -- \(.date) -- \(.videoURL)"' \
-    | _choose \
-    | awk '{print $NF}' \
-)
+while :; do
+    video_url=$(printf '%s' "${vids_jsonvdata}" \
+        | jq -r '.[]| "[\(.channel)] -- \(.title) -- [\(.duration)] -- \(.date) -- \(.videoURL)"' \
+        | _choose \
+        | awk '{print $NF}' \
+    )
 
-# If no video was chosen, exit
-[ -z "${video_url}" ] && exit 0
+    # If no video was chosen, exit
+    [ -z "${video_url}" ] && exit 0
 
-printf '%s\n' ${video_url} | mpv --playlist=-
+    # shellcheck disable=SC2086
+    printf '%s\n' ${video_url} | mpv --playlist=-
+done
