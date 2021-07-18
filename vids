@@ -49,6 +49,7 @@ usage() {
     phi -pt "--prtb" "--peertube  " "Search PeerTube"
     phi -bc "--btct" "--bitchute  " "Search BitChute"
     phi -td "--ted " "--tedtalk   " "Search TED Talks"
+    phi -lb "--lbry" "--odysee    " "Search LBRY"
 }
 
 case "$1" in
@@ -70,6 +71,8 @@ case "$1" in
             pltfrm="bitchute" ; shift;;
     -td|--ted|--tedtalk)
             pltfrm="tedtalk"  ; shift;;
+    -lb|-lbr|--lbry|--odysee)
+            pltfrm="lbry"  ; shift;;
     -h |--help|--*|-*)
             usage; exit 0 ;;
 esac
@@ -139,6 +142,18 @@ case "${pltfrm}" in
             VIDSHDR2=""
             VIDSJSN1=""
             VIDSJSN2='[ .[] |{ title: .name, channel: "TED", duration: .duration, views: .views, date: .publishedAt, videoURL: "https://ted.com/talks/\(.slug)", }]'
+             ;;
+    "lbry")
+            VIDSBRND="LBRY"
+            VIDSMTHD="GET"
+            VIDSPRMT="-G --data-urlencode"
+            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video&resolve=true"
+            VIDSPRMT1="s"
+            VIDSPRMT2="resolve=true"
+            VIDSHDR1=""
+            VIDSHDR2=""
+            VIDSJSN1=""
+            VIDSJSN2='[ .[] |{ title: .title, channel: .channel ,duration: .duration, views: "0", date: .release_time, videoURL: "https://www.odysee.com/\(.channel)/\(.name)", }]'
              ;;
 esac
 
