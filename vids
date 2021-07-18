@@ -116,10 +116,7 @@ case "${pltfrm}" in
             VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration: .duration, views: .views, date: .publishedAt, videoURL: .url, }]'
              ;;
     "bitchute")
-            BTCTCOKY="$(curl --head "https://www.bitchute.com/" -s -H "referer:https://www.bitchute.com/" \
-                        -H "user-agent:Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0" \
-                        -H "accept-language:en-US, en;q=0.9" -H "accept-encoding:gzip" --compressed \
-                        --cookie-jar - -o /dev/null | awk '/csrftoken/{print $NF}')"
+            BTCTCOKY="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7" 
             VIDSBRND="BitChute"
             VIDSMTHD="POST"
             VIDSPRMT="-d"
@@ -147,7 +144,7 @@ case "${pltfrm}" in
             VIDSBRND="LBRY"
             VIDSMTHD="GET"
             VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video&resolve=true"
+            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video"
             VIDSPRMT1="s"
             VIDSPRMT2="resolve=true"
             VIDSHDR1=""
