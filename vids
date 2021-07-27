@@ -3,6 +3,7 @@ VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
 VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
+VIDS_PEERTUBE_URL="${VIDS_PEERTUBE_URL:-https://sepiasearch.org}"      # https://instances.joinpeertube.org/
 
 # check if app installed ; ignores aliases
 has() {
@@ -138,9 +139,9 @@ case "${VIDS_PLTFRM}" in
             VIDSBRND="PeerTube"
             VIDSMTHD="GET"
             VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://sepiasearch.org/api/v1/search/videos"
+            VIDSURL="${VIDS_PEERTUBE_URL}/api/v1/search/videos"
             VIDSPRMT1="search"
-            VIDSPRMT2="count=20"
+            VIDSPRMT2="count=40"
             VIDSHDR1=""
             VIDSHDR2=""
             VIDSJSN1=".data"
