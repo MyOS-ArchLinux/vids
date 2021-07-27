@@ -148,14 +148,14 @@ case "${VIDS_PLTFRM}" in
             VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration: .duration, views: .views, date: .publishedAt, videoURL: .url, }]'
              ;;
     "bitchute")
-            BTCTCOKY="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7" 
+            BTCTCSRF="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7" 
             VIDSBRND="BitChute"
             VIDSMTHD="POST"
             VIDSPRMT="-d"
             VIDSURL="https://www.bitchute.com/api/search/list/"
             VIDSPRMT1="query"
-            VIDSPRMT2="csrfmiddlewaretoken=${BTCTCOKY}"
-            VIDSHDR1="cookie: csrftoken=${BTCTCOKY};"
+            VIDSPRMT2="csrfmiddlewaretoken=${BTCTCSRF}"
+            VIDSHDR1="cookie: csrftoken=${BTCTCSRF};"
             VIDSHDR2="referer: https://www.bitchute.com/"
             VIDSJSN1=".results"
             VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: .views, date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
