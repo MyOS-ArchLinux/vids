@@ -101,7 +101,7 @@ case "${pltfrm}" in
             VIDSHDR1="x-youtube-client-name:1"
             VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
             VIDSJSN1=".[1].response"
-            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:"\(.lengthText.simpleText // "Livestream")", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
              ;;
     "peertube")
             VIDSBRND="PeerTube"
