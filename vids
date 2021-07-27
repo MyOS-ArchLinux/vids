@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
+VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
 VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
 
@@ -17,16 +19,18 @@ pht() {
     >&2 printf '%s\n' "$@"
 }
 
-if has 'rofi' ; then
-    vids_menu="rofi"
+if [ -n "${VIDS_MENU}" ] && has ${VIDS_MENU} ; then
+    VIDS_MENU="${VIDS_MENU}"
+elif has 'rofi' ; then
+    VIDS_MENU="rofi"
 elif has 'dmenu'; then
-    vids_menu="dmenu"
+    VIDS_MENU="dmenu"
 else
-    vids_menu="fzf"
+    VIDS_MENU="fzf"
 fi
 
 _input(){
-    case "$vids_menu" in
+    case "$VIDS_MENU" in
         "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Video:" ;;
         "rofi")  printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0 ;;
         "fzf")   read -r query && echo "${query}" ;;
@@ -34,7 +38,7 @@ _input(){
 }
 
 _choose(){
-    case "$vids_menu" in
+    case "$VIDS_MENU" in
         "dmenu") dmenu -i -p 'Select Video:' -l 20 ;;
         "rofi")  rofi -dmenu -i -p 'Select Video' -width 90 -l 20 -multi-select -no-click-to-exit ;;
         "fzf")   fzf --with-nth='1..-3' --multi --cycle --header='Select Video:' ;;
@@ -55,31 +59,29 @@ usage() {
 }
 
 case "$1" in
-    "-dmenu"|"--dmenu") vids_menu="dmenu"; shift;;
-    "-rofi"|"--rofi")   vids_menu="rofi" ; shift;;
-    "-fzf"|"--fzf")     vids_menu="fzf"  ; shift;;
+    "-dmenu"|"--dmenu") VIDS_MENU="dmenu"; shift;;
+    "-rofi"|"--rofi")   VIDS_MENU="rofi" ; shift;;
+    "-fzf"|"--fzf")     VIDS_MENU="fzf"  ; shift;;
 esac
 
-# Set Default
-pltfrm="youtube"
 case "$1" in
     -tr|--ytr|--ytrending)
-            pltfrm="ytrending"; shift;;
+            VIDS_PLTFRM="ytrending"; shift;;
     -yt|--ytb|--youtube)
-            pltfrm="youtube"  ; shift;;
+            VIDS_PLTFRM="youtube"  ; shift;;
     -pt|--prtb|--peertube)
-            pltfrm="peertube" ; shift;;
+            VIDS_PLTFRM="peertube" ; shift;;
     -bc|--btct|--bitchute)
-            pltfrm="bitchute" ; shift;;
+            VIDS_PLTFRM="bitchute" ; shift;;
     -td|--ted|--tedtalk)
-            pltfrm="tedtalk"  ; shift;;
+            VIDS_PLTFRM="tedtalk"  ; shift;;
     -lb|-lbr|--lbry|--odysee)
-            pltfrm="lbry"  ; shift;;
+            VIDS_PLTFRM="lbry"  ; shift;;
     -h |--help|--*|-*)
             usage; exit 0 ;;
 esac
 
-case "${pltfrm}" in
+case "${VIDS_PLTFRM}" in
     "ytrending")
             if [ "${VIDS_YOUTUBE_PIPED}" = true ]; then
                 VIDSBRND="Youtube Trending (Piped)"
