@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
+VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
 
 # check if app installed ; ignores aliases
 has() {
@@ -79,29 +81,56 @@ esac
 
 case "${pltfrm}" in
     "ytrending")
-            VIDSBRND="Youtube Trending"
-            VIDSMTHD="GET"
-            VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://www.youtube.com/feed/trending"
-            query="US"
-            VIDSPRMT1="gl"
-            VIDSPRMT2="pbj=1"
-            VIDSHDR1="x-youtube-client-name:1"
-            VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
-            VIDSJSN1=".[1].response"
-            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+            if [ "${VIDS_YOUTUBE_PIPED}" = true ]; then
+                VIDSBRND="Youtube Trending (Piped)"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="${VIDS_PIPEDAPI_URL}/trending"
+                query="US"
+                VIDSPRMT1="region"
+                VIDSPRMT2=""
+                VIDSHDR1=""
+                VIDSHDR2=""
+                VIDSJSN1=""
+                VIDSJSN2='[ .[] |{ title: .title, channel: .uploaderName, duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: .uploadedDate, videoURL: "https://youtube.com/\(.url[9:])", }]'
+            else
+                VIDSBRND="Youtube Trending"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="https://www.youtube.com/feed/trending"
+                query="US"
+                VIDSPRMT1="gl"
+                VIDSPRMT2="pbj=1"
+                VIDSHDR1="x-youtube-client-name:1"
+                VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
+                VIDSJSN1=".[1].response"
+                VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+            fi
              ;;
     "youtube")
-            VIDSBRND="Youtube"
-            VIDSMTHD="GET"
-            VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://www.youtube.com/results"
-            VIDSPRMT1="search_query"
-            VIDSPRMT2="pbj=1"
-            VIDSHDR1="x-youtube-client-name:1"
-            VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
-            VIDSJSN1=".[1].response"
-            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:"\(.lengthText.simpleText // "Livestream")", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
+            if [ "${VIDS_YOUTUBE_PIPED}" = true ]; then
+                VIDSBRND="Youtube (Piped)"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="${VIDS_PIPEDAPI_URL}/search"
+                VIDSPRMT1="q"
+                VIDSPRMT2="filter=videos"
+                VIDSHDR1=""
+                VIDSHDR2=""
+                VIDSJSN1=".items"
+                VIDSJSN2='[ .[] |{ title: .name , channel: .uploader ,duration:"\(if .duration == -1 then "Livestream" elif .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views" , date: "\(.uploadDate // "Right now")", videoURL: "https://youtu.be/\(.url[9:])", }]'
+            else
+                VIDSBRND="Youtube"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="https://www.youtube.com/results"
+                VIDSPRMT1="search_query"
+                VIDSPRMT2="pbj=1"
+                VIDSHDR1="x-youtube-client-name:1"
+                VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
+                VIDSJSN1=".[1].response"
+                VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:"\(.lengthText.simpleText // "Livestream")", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
+            fi
              ;;
     "peertube")
             VIDSBRND="PeerTube"
