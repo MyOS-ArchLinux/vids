@@ -224,5 +224,5 @@ while :; do
     [ -z "${video_url}" ] && exit 0
 
     # shellcheck disable=SC2086
-    printf '%s\n' ${video_url} | mpv --playlist=-
+    printf '%s\n' ${video_url} | xargs mpv
 done
