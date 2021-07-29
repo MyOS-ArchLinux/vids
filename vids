@@ -2,7 +2,7 @@
 VERSION=0.2
 VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
-VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"           # Default Player
+VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
 VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
 VIDS_PEERTUBE_URL="${VIDS_PEERTUBE_URL:-https://sepiasearch.org}"      # https://instances.joinpeertube.org/
