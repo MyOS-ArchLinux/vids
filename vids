@@ -3,6 +3,7 @@ VERSION=0.2
 VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
+VIDS_SHOW_NSFW="${VIDS_SHOW_NSFW:-false}"         # include nsfw video 
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
 VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
 VIDS_PEERTUBE_URL="${VIDS_PEERTUBE_URL:-https://sepiasearch.org}"      # https://instances.joinpeertube.org/
@@ -86,6 +87,9 @@ usage() {
     _phi "--piped                   Use Piped; a privacy-friendly YouTube frontend."
     _phi "--no-piped                Do not use Piped."
     _pht
+    _phi "--nsfw                    Include nsfw videos. (WIP)"
+    _phi "--no-nsfw                 Do not include nsfw videos. (WIP)"
+    _pht
     _pht "  Menu Options:"
     _phi "-m, --menu MENU          "
     _phi "    fzf                  supports multi-select with tab/shift-tab."
@@ -158,6 +162,15 @@ while [ "$1" ]; do
             ;;
         "--no-piped")
             VIDS_YOUTUBE_PIPED=false
+            shift
+            ;;
+
+        "--nsfw")
+            VIDS_SHOW_NSFW=true
+            shift
+            ;;
+        "--no-nsfw")
+            VIDS_SHOW_NSFW=false
             shift
             ;;
 
@@ -241,7 +254,7 @@ case "${VIDS_PLTFRM}" in
             VIDSHDR1=""
             VIDSHDR2=""
             VIDSJSN1=".data"
-            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: .publishedAt| sub("(?<time>.*)\\.[\\d]{3}(?<tz>.*)"; "\(.time)\(.tz)")|strptime("%Y-%m-%dT%H:%M:%SZ")|strftime("%Y-%m-%d"), videoURL: .url, }]'
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration:"\(if .duration == 0 then "Livestream" elif .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: .publishedAt| sub("(?<time>.*)\\.[\\d]{3}(?<tz>.*)"; "\(.time)\(.tz)")|strptime("%Y-%m-%dT%H:%M:%SZ")|strftime("%Y-%m-%d"), videoURL: .url, }]'
              ;;
     "bitchute")
             BTCTCSRF="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7"
@@ -273,6 +286,7 @@ case "${VIDS_PLTFRM}" in
             VIDSMTHD="GET"
             VIDSPRMT="-G --data-urlencode"
             VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video&include=view_cnt"
+            [ "${VIDS_SHOW_NSFW}" = true ] && VIDSURL="${VIDSURL}&nsfw=true"
             VIDSPRMT1="s"
             VIDSPRMT2="resolve=true"
             VIDSHDR1=""
