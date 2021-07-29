@@ -240,7 +240,7 @@ case "${VIDS_PLTFRM}" in
             VIDSHDR1=""
             VIDSHDR2=""
             VIDSJSN1=".data"
-            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration: .duration, views: .views, date: .publishedAt, videoURL: .url, }]'
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: .publishedAt| sub("(?<time>.*)\\.[\\d]{3}(?<tz>.*)"; "\(.time)\(.tz)")|strptime("%Y-%m-%dT%H:%M:%SZ")|strftime("%Y-%m-%d"), videoURL: .url, }]'
              ;;
     "bitchute")
             BTCTCSRF="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7"
@@ -253,7 +253,7 @@ case "${VIDS_PLTFRM}" in
             VIDSHDR1="cookie: csrftoken=${BTCTCSRF};"
             VIDSHDR2="referer: https://www.bitchute.com/"
             VIDSJSN1=".results"
-            VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: .views, date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: "\(.views) views", date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
              ;;
     "tedtalk")
             VIDSBRND="TED Talks"
@@ -271,13 +271,13 @@ case "${VIDS_PLTFRM}" in
             VIDSBRND="LBRY"
             VIDSMTHD="GET"
             VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video"
+            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video&include=view_cnt"
             VIDSPRMT1="s"
             VIDSPRMT2="resolve=true"
             VIDSHDR1=""
             VIDSHDR2=""
             VIDSJSN1=""
-            VIDSJSN2='[ .[] |{ title: .title, channel: .channel ,duration: .duration, views: "0", date: .release_time, videoURL: "https://www.odysee.com/\(.channel)/\(.name)", }]'
+            VIDSJSN2='[ .[] |{ title: .title, channel: .channel ,duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.view_cnt) views", date: .release_time|strptime("%Y-%m-%dT%H:%M:%SZ")|strftime("%Y-%m-%d"), videoURL: "https://www.odysee.com/\(.channel)/\(.name)", }]'
              ;;
 esac
 
