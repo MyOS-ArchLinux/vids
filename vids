@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+VERSION=0.2
 VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
@@ -12,15 +13,22 @@ has() {
     esac
 }
 
-phi() {
-    >&2 printf '    %s , %s , %s     %s\n' "$1" "$2" "$3" "$4"
+_phi() {
+    >&2 printf '    %s\n' "$1"
 }
 
-pht() {
+_pht() {
     >&2 printf '%s\n' "$@"
 }
 
-if [ -n "${VIDS_MENU}" ] && has ${VIDS_MENU} ; then
+# print error message & exit
+_pemx() {
+    _pht "Usage:   vids [OPTIONS] query"
+    _pht
+    >&2 printf '\033[31;1merror :\033[m %s\n' "$1" && exit 1
+}
+
+if [ -n "${VIDS_MENU}" ] && has "${VIDS_MENU}" ; then
     VIDS_MENU="${VIDS_MENU}"
 elif has 'rofi' ; then
     VIDS_MENU="rofi"
@@ -34,7 +42,7 @@ _input(){
     case "$VIDS_MENU" in
         "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Video:" ;;
         "rofi")  printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0 ;;
-        "fzf")   read -r query && echo "${query}" ;;
+        "fzf"|"print"|"print-json"|"print-link")   read -r query && echo "${query}" ;;
     esac
 }
 
@@ -46,41 +54,128 @@ _choose(){
     esac
 }
 
-usage() {
-    pht "Usage:   vids --option query"
-    pht
-    pht "Options:"
-
-    phi -tr "--ytr " "--ytrending " "Get List Youtube Trending"
-    phi -yt "--ytb " "--youtube   " "Search Youtube"
-    phi -pt "--prtb" "--peertube  " "Search PeerTube"
-    phi -bc "--btct" "--bitchute  " "Search BitChute"
-    phi -td "--ted " "--tedtalk   " "Search TED Talks"
-    phi -lb "--lbry" "--odysee    " "Search LBRY"
+version(){
+    _pht "vids $VERSION"
 }
 
-case "$1" in
-    "-dmenu"|"--dmenu") VIDS_MENU="dmenu"; shift;;
-    "-rofi"|"--rofi")   VIDS_MENU="rofi" ; shift;;
-    "-fzf"|"--fzf")     VIDS_MENU="fzf"  ; shift;;
-esac
+usage() {
+    _pht "Usage:   vids [OPTIONS] query"
+    _pht
+    _pht "Options:"
+    _pht "  General Options:"
+    _phi "-h, --help                Print this help text and exit."
+    _phi "-v, --version             Print program version and exit."
+    _pht
+    _pht "  Search:"
+    _phi "-p, --platform            "
+    _phi "    ytrending             Youtbe Trending"
+    _phi "    youtube               Youtbe"
+    _phi "    peertube              PeerTube"
+    _phi "    bitchute              BitChute"
+    _phi "    lbry                  LBRY"
+    _phi "    tedtalk               TED Talks"
+    _pht
+    _phi "-ytr, --ytrending         A synonym for -p ytrending"
+    _phi "-yt, --youtube            A synonym for -p youtube"
+    _phi "-pt, --peertube           A synonym for -p peertube"
+    _phi "-bc, --bitchute           A synonym for -p bitchute"
+    _phi "-ted, --tedtalk           A synonym for -p tedtalk"
+    _phi "-lb, --lbry, --odysee     A synonym for -p lbry"
+    _pht
+    _phi "--piped                   Use Piped; a privacy-friendly YouTube frontend."
+    _phi "--no-piped                Do not use Piped."
+    _pht
+    _pht "  Menu Options:"
+    _phi "-m, --menu MENU          "
+    _phi "    fzf                  supports multi-select with tab/shift-tab."
+    _phi "    dmenu                doesn't supports multi-select."
+    _phi "    rofi                 supports multi-select with shift-enter."
+    _pht
+    _phi "--fzf                    A synonym for --menu fzf"
+    _phi "--dmenu                  A synonym for --menu dmenu"
+    _phi "--rofi                   A synonym for --menu rofi"
+    _pht
+    _pht "  Scripting Options:"
+    _phi "--print-json             print results json to stdout and exit."
+    _phi "--print-link             print results links to stdout and exit."
+    _phi "--print                  print results to stdout and exit."
+    _pht
+    _pht "  Environment variables:"
+    _phi "VIDS_DEFAULT_MENU        Default Menu to use. (default: rofi -> dmenu -> fzf)"
+    _phi "VIDS_DEFAULT_PLATFORM    Default platform to use. (default: youtube)"
+    _phi "VIDS_YOUTUBE_PIPED       Use Piped; the privacy-friendly YouTube frontend. (default: false )"
+    _phi "VIDS_PIPEDAPI_URL        Piped Instance API URL. (default: https://pipedapi.kavin.rocks )"
+    _phi "VIDS_PEERTUBE_URL        PeerTube Instance URL. (default: https://sepiasearch.org )"
 
-case "$1" in
-    -tr|--ytr|--ytrending)
-            VIDS_PLTFRM="ytrending"; shift;;
-    -yt|--ytb|--youtube)
-            VIDS_PLTFRM="youtube"  ; shift;;
-    -pt|--prtb|--peertube)
-            VIDS_PLTFRM="peertube" ; shift;;
-    -bc|--btct|--bitchute)
-            VIDS_PLTFRM="bitchute" ; shift;;
-    -td|--ted|--tedtalk)
-            VIDS_PLTFRM="tedtalk"  ; shift;;
-    -lb|-lbr|--lbry|--odysee)
-            VIDS_PLTFRM="lbry"  ; shift;;
-    -h |--help|--*|-*)
-            usage; exit 0 ;;
-esac
+
+
+}
+
+while [ "$1" ]; do
+    case "$1" in
+        "-h"|"--help")
+            usage
+            exit 0
+            ;;
+        "-v"|"--version")
+            version
+            exit 0
+            ;;
+
+        "-p"|"--platform")
+            if [ $# -lt 2 ]; then
+                _pemx "$1 option requires 1 argument"
+            fi
+            case "$2" in
+                "ytrending"|"youtube"|"peertube"|"bitchute"|"tedtalk"|"lbry") VIDS_PLTFRM="$2"; shift 2 ;;
+                *)  _pemx "'$2' platform is not supported yet! if you wanted us to add it, open an issues on our github: https://github.com/MyOS-ArchLinux/vids" ;;
+            esac
+            ;;
+        "-ytr"|"--ytrending")
+                VIDS_PLTFRM="ytrending"; shift
+            ;;
+        "-yt"|"--youtube")
+                VIDS_PLTFRM="youtube"  ; shift
+            ;;
+        "-pt"|"--peertube")
+                VIDS_PLTFRM="peertube" ; shift
+            ;;
+        "-bc"|"--bitchute")
+                VIDS_PLTFRM="bitchute" ; shift
+            ;;
+        "-ted"|"--tedtalk")
+                VIDS_PLTFRM="tedtalk"  ; shift
+            ;;
+        "-lb"|"--lbry"|"--odysee")
+                VIDS_PLTFRM="lbry"  ; shift
+            ;;
+
+        "--piped")
+            VIDS_YOUTUBE_PIPED=true
+            shift
+            ;;
+        "--no-piped")
+            VIDS_YOUTUBE_PIPED=false
+            shift
+            ;;
+
+        "-m"|"--menu")
+            if [ $# -lt 2 ]; then
+                _pemx "$1 option requires 1 argument"
+            fi
+            case "$2" in
+                fzf|dmenu|rofi) VIDS_MENU="$2"; shift 2 ;;
+                *)  _pemx "'$2' is not supported as a menu, use instead : fzf , dmenu , rofi." ;;
+            esac
+            ;;
+        "--fzf"|"--dmenu"|"--rofi"|"--print"|"--print-json"|"--print-link")
+            VIDS_MENU="${1#??}"
+            shift
+            ;;
+        *)  query="${query}$1 " ; shift;;
+    esac
+done
+
 
 case "${VIDS_PLTFRM}" in
     "ytrending")
@@ -126,7 +221,7 @@ case "${VIDS_PLTFRM}" in
                 VIDSBRND="Youtube"
                 VIDSMTHD="GET"
                 VIDSPRMT="-G --data-urlencode"
-                VIDSURL="https://www.youtube.com/results"
+                VIDSURL="https://www.youtube.com/results?sp=EgIQAQ%253D%253D"
                 VIDSPRMT1="search_query"
                 VIDSPRMT2="pbj=1"
                 VIDSHDR1="x-youtube-client-name:1"
@@ -148,7 +243,7 @@ case "${VIDS_PLTFRM}" in
             VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration: .duration, views: .views, date: .publishedAt, videoURL: .url, }]'
              ;;
     "bitchute")
-            BTCTCSRF="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7" 
+            BTCTCSRF="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7"
             VIDSBRND="BitChute"
             VIDSMTHD="POST"
             VIDSPRMT="-d"
@@ -212,6 +307,21 @@ vids_jsondata=$(curl -X ${VIDSMTHD} "${VIDSURL}" -s \
 )
 
 vids_jsonvdata=$(printf '%s' "${vids_jsondata}" | jq -r "${VIDSJSN1}" | jq -r "${VIDSJSN2}")
+
+case "$VIDS_MENU" in
+    "print")
+            printf '%s' "${vids_jsonvdata}" | jq -r '.[]| "[\(.channel)] -- \(.title) -- [\(.duration)] -- \(.date) -- \(.videoURL)"'
+            exit 0
+            ;;
+    "print-json")
+            printf '%s' "${vids_jsonvdata}"
+            exit 0
+            ;;
+    "print-link")
+            printf '%s' "${vids_jsonvdata}" | jq -r '.[]|.videoURL'
+            exit 0
+            ;;
+esac
 
 while :; do
     video_url=$(printf '%s' "${vids_jsonvdata}" \
