@@ -109,6 +109,7 @@ usage() {
     _phi "VIDS_DEFAULT_MENU        Default menu to use. (default: rofi -> dmenu -> fzf)"
     _phi "VIDS_DEFAULT_PLATFORM    Default platform to use. (default: youtube)"
     _phi "VIDS_DEFAULT_PLAYER      Default video player to use. (default: mpv)"
+    _phi "VIDS_SHOW_NSFW           Always include NSFW videos (default: false)"
     _phi "VIDS_YOUTUBE_PIPED       Use Piped; the privacy-friendly YouTube frontend. (default: false )"
     _phi "VIDS_PIPEDAPI_URL        Piped Instance API URL. (default: https://pipedapi.kavin.rocks )"
     _phi "VIDS_PEERTUBE_URL        PeerTube Instance URL. (default: https://sepiasearch.org )"
