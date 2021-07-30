@@ -3,7 +3,7 @@ VERSION=0.2
 VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
-VIDS_SHOW_NSFW="${VIDS_SHOW_NSFW:-false}"         # include nsfw video 
+VIDS_SHOW_NSFW="${VIDS_SHOW_NSFW:-false}"         # include nsfw video
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # use youtube alternative front-end Piped
 VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
 VIDS_PEERTUBE_URL="${VIDS_PEERTUBE_URL:-https://sepiasearch.org}"      # https://instances.joinpeertube.org/
@@ -139,41 +139,27 @@ while [ "$1" ]; do
             esac
             ;;
         "-ytr"|"--ytrending")
-                VIDS_PLTFRM="ytrending"; shift
-            ;;
+            VIDS_PLTFRM="ytrending" ; shift ;;
         "-yt"|"--youtube")
-                VIDS_PLTFRM="youtube"  ; shift
-            ;;
+            VIDS_PLTFRM="youtube"   ; shift ;;
         "-pt"|"--peertube")
-                VIDS_PLTFRM="peertube" ; shift
-            ;;
+            VIDS_PLTFRM="peertube"  ; shift ;;
         "-bc"|"--bitchute")
-                VIDS_PLTFRM="bitchute" ; shift
-            ;;
+            VIDS_PLTFRM="bitchute"  ; shift ;;
         "-ted"|"--tedtalk")
-                VIDS_PLTFRM="tedtalk"  ; shift
-            ;;
+            VIDS_PLTFRM="tedtalk"   ; shift ;;
         "-lb"|"--lbry"|"--odysee")
-                VIDS_PLTFRM="lbry"  ; shift
-            ;;
+            VIDS_PLTFRM="lbry"      ; shift ;;
 
         "--piped")
-            VIDS_YOUTUBE_PIPED=true
-            shift
-            ;;
+            VIDS_YOUTUBE_PIPED=true ; shift ;;
         "--no-piped")
-            VIDS_YOUTUBE_PIPED=false
-            shift
-            ;;
+            VIDS_YOUTUBE_PIPED=false; shift ;;
 
         "--nsfw")
-            VIDS_SHOW_NSFW=true
-            shift
-            ;;
+            VIDS_SHOW_NSFW=true     ; shift ;;
         "--no-nsfw")
-            VIDS_SHOW_NSFW=false
-            shift
-            ;;
+            VIDS_SHOW_NSFW=false    ; shift ;;
 
         "-m"|"--menu")
             if [ $# -lt 2 ]; then
@@ -185,10 +171,13 @@ while [ "$1" ]; do
             esac
             ;;
         "--fzf"|"--dmenu"|"--rofi"|"--print"|"--print-json"|"--print-link")
-            VIDS_MENU="${1#??}"
-            shift
-            ;;
-        *)  query="${query}$1 " ; shift;;
+            VIDS_MENU="${1#??}"     ; shift ;;
+        "--")
+            shift ; break ;;
+        "-"*)
+            _pemx "$1 in not a supported option" ;;
+        *)  break ;;
+
     esac
 done
 
