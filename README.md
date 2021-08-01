@@ -75,5 +75,15 @@ Options:
   Improve me on GitHub:
     https://github.com/MyOS-ArchLinux/vids
 ```
+## Examples
+- Search Youtube With fzf menu
+   `vids --platform youtube --fzf Music`
+- Search LBRY and print results to stdout
+   `vids --lbry --print Music`
+- Get a list of trending videos on youtube but don't expose your ip to youtube. (Use Piped)
+   `vids --ytrending --piped`
+- Scripting : Search PeerTube and extract titles
+   `vids --peertube --print-json music | awk '{if (NR!=1) {print}}' | jq -r ".[]|.title"`
+
 ## Note
 You may want to install [mpv-youtube-quality](https://github.com/jgreco/mpv-youtube-quality) to change video quality on the fly , and [mpv_sponsorblock](https://github.com/po5/mpv_sponsorblock) or [mpv_sponsorblock_minimal](https://codeberg.org/jouni/mpv_sponsorblock_minimal) to skip sponsored segments of YouTube videos automatically.
