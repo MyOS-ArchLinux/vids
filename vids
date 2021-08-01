@@ -1,4 +1,12 @@
 #!/usr/bin/env sh
+VERSION=0.2
+VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
+VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
+VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
+VIDS_SHOW_NSFW="${VIDS_SHOW_NSFW:-false}"         # Include NSFW video
+VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # Use youtube alternative front-end Piped
+VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
+VIDS_PEERTUBE_URL="${VIDS_PEERTUBE_URL:-https://sepiasearch.org}"      # https://instances.joinpeertube.org/
 
 # check if app installed ; ignores aliases
 has() {
@@ -7,126 +15,248 @@ has() {
     esac
 }
 
-phi() {
-    >&2 printf '    %s , %s , %s     %s\n' "$1" "$2" "$3" "$4"
+_phi() {
+    >&2 printf '    %s\n' "$1"
 }
 
-pht() {
+_pht() {
     >&2 printf '%s\n' "$@"
 }
 
-if has 'rofi' ; then
-    vids_menu="rofi"
+# print error message & exit
+_pemx() {
+    _pht "Usage:   $(basename "$0") [OPTIONS] query"
+    _pht
+    >&2 printf '\033[31;1merror :\033[m %s\n' "$1" && exit 1
+}
+
+if [ -n "${VIDS_MENU}" ] && has "${VIDS_MENU}" ; then
+    VIDS_MENU="${VIDS_MENU}"
+elif has 'rofi' ; then
+    VIDS_MENU="rofi"
 elif has 'dmenu'; then
-    vids_menu="dmenu"
-else
-    vids_menu="fzf"
+    VIDS_MENU="dmenu"
+elif has 'fzf'; then
+    VIDS_MENU="fzf"
 fi
 
 _input(){
-    case "$vids_menu" in
+    case "$VIDS_MENU" in
         "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Video:" ;;
         "rofi")  printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0 ;;
-        "fzf")   read -r query && echo "${query}" ;;
+        "fzf"|"print"|"print-json"|"print-link") read -r query && echo "${query}" ;;
     esac
 }
 
 _choose(){
-    case "$vids_menu" in
+    case "$VIDS_MENU" in
         "dmenu") dmenu -i -p 'Select Video:' -l 20 ;;
         "rofi")  rofi -dmenu -i -p 'Select Video' -width 90 -l 20 -multi-select -no-click-to-exit ;;
-        "fzf")   fzf --with-nth='1..-3' --multi --cycle --header='Select Video:' ;;
+        "fzf")   fzf -i -e --with-nth='1..-3' --multi --cycle --bind=ctrl-a:toggle-all --header='Select Video:' ;;
     esac
 }
 
-usage() {
-    pht "Usage:   vids --option query"
-    pht
-    pht "Options:"
-
-    phi -tr "--ytr " "--ytrending " "Get List Youtube Trending"
-    phi -yt "--ytb " "--youtube   " "Search Youtube"
-    phi -pt "--prtb" "--peertube  " "Search PeerTube"
-    phi -bc "--btct" "--bitchute  " "Search BitChute"
-    phi -td "--ted " "--tedtalk   " "Search TED Talks"
-    phi -lb "--lbry" "--odysee    " "Search LBRY"
+version(){
+    _pht "$(basename "$0") $VERSION"
 }
 
-case "$1" in
-    "-dmenu"|"--dmenu") vids_menu="dmenu"; shift;;
-    "-rofi"|"--rofi")   vids_menu="rofi" ; shift;;
-    "-fzf"|"--fzf")     vids_menu="fzf"  ; shift;;
-esac
+usage() {
+    _pht "Usage:   $(basename "$0") [OPTIONS] query"
+    _pht
+    _pht "Options:"
+    _pht "  General Options:"
+    _phi "-h, --help                Print this help text and exit."
+    _phi "-v, --version             Print program version and exit."
+    _pht
+    _pht "  Search:"
+    _phi "-p, --platform            "
+    _phi "    ytrending             Youtbe Trending"
+    _phi "    youtube               Youtbe"
+    _phi "    peertube              PeerTube"
+    _phi "    bitchute              BitChute"
+    _phi "    lbry                  LBRY"
+    _phi "    tedtalk               TED Talks"
+    _pht
+    _phi "-ytr, --ytrending         An alias for -p ytrending"
+    _phi "-yt, --youtube            An alias for -p youtube"
+    _phi "-pt, --peertube           An alias for -p peertube"
+    _phi "-bc, --bitchute           An alias for -p bitchute"
+    _phi "-ted, --tedtalk           An alias for -p tedtalk"
+    _phi "-lb, --lbry, --odysee     An alias for -p lbry"
+    _pht
+    _phi "--piped                   Use Piped; a privacy-friendly YouTube frontend."
+    _phi "--no-piped                Do not use Piped."
+    _pht
+    _phi "--nsfw                    Include nsfw videos. (WIP)"
+    _phi "--no-nsfw                 Do not include nsfw videos. (WIP)"
+    _pht
+    _pht "  Menu Options:"
+    _phi "-m, --menu MENU          "
+    _phi "    fzf                  supports multi-select with tab/shift-tab."
+    _phi "    dmenu                doesn't supports multi-select."
+    _phi "    rofi                 supports multi-select with shift-enter."
+    _pht
+    _phi "--fzf                    An alias for --menu fzf"
+    _phi "--dmenu                  An alias for --menu dmenu"
+    _phi "--rofi                   An alias for --menu rofi"
+    _pht
+    _pht "  Scripting Options:"
+    _phi "--print-json             print results json to stdout and exit."
+    _phi "--print-link             print results links to stdout and exit."
+    _phi "--print                  print results to stdout and exit."
+    _pht
+    _pht "  Environment variables:"
+    _phi "VIDS_DEFAULT_MENU        Default menu to use. (default: rofi -> dmenu -> fzf)"
+    _phi "VIDS_DEFAULT_PLATFORM    Default platform to use. (default: youtube)"
+    _phi "VIDS_DEFAULT_PLAYER      Default video player to use. (default: mpv)"
+    _phi "VIDS_SHOW_NSFW           Always include NSFW videos (default: false)"
+    _phi "VIDS_YOUTUBE_PIPED       Use Piped; the privacy-friendly YouTube frontend. (default: false )"
+    _phi "VIDS_PIPEDAPI_URL        Piped Instance API URL. (default: https://pipedapi.kavin.rocks )"
+    _phi "VIDS_PEERTUBE_URL        PeerTube Instance URL. (default: https://sepiasearch.org )"
+    _pht
+    _pht "  Improve me on GitHub:"
+    _phi "https://github.com/MyOS-ArchLinux/vids"
+}
 
-# Set Default
-pltfrm="youtube"
-case "$1" in
-    -tr|--ytr|--ytrending)
-            pltfrm="ytrending"; shift;;
-    -yt|--ytb|--youtube)
-            pltfrm="youtube"  ; shift;;
-    -pt|--prtb|--peertube)
-            pltfrm="peertube" ; shift;;
-    -bc|--btct|--bitchute)
-            pltfrm="bitchute" ; shift;;
-    -td|--ted|--tedtalk)
-            pltfrm="tedtalk"  ; shift;;
-    -lb|-lbr|--lbry|--odysee)
-            pltfrm="lbry"  ; shift;;
-    -h |--help|--*|-*)
-            usage; exit 0 ;;
-esac
+while [ "$1" ]; do
+    case "$1" in
+        "-h"|"--help")
+            usage
+            exit 0
+            ;;
+        "-v"|"--version")
+            version
+            exit 0
+            ;;
 
-case "${pltfrm}" in
+        "-p"|"--platform")
+            if [ $# -lt 2 ]; then
+                _pemx "$1 option requires 1 argument"
+            fi
+            case "$2" in
+                "ytrending"|"youtube"|"peertube"|"bitchute"|"tedtalk"|"lbry") VIDS_PLTFRM="$2"; shift 2 ;;
+                *) _pemx "'$2' platform is not supported yet! if you wanted us to add it, open an issues on our github: https://github.com/MyOS-ArchLinux/vids" ;;
+            esac
+            ;;
+        "-ytr"|"--ytrending")
+            VIDS_PLTFRM="ytrending" ; shift ;;
+        "-yt"|"--youtube")
+            VIDS_PLTFRM="youtube"   ; shift ;;
+        "-pt"|"--peertube")
+            VIDS_PLTFRM="peertube"  ; shift ;;
+        "-bc"|"--bitchute")
+            VIDS_PLTFRM="bitchute"  ; shift ;;
+        "-ted"|"--tedtalk")
+            VIDS_PLTFRM="tedtalk"   ; shift ;;
+        "-lb"|"--lbry"|"--odysee")
+            VIDS_PLTFRM="lbry"      ; shift ;;
+
+        "--piped")
+            VIDS_YOUTUBE_PIPED=true ; shift ;;
+        "--no-piped")
+            VIDS_YOUTUBE_PIPED=false; shift ;;
+
+        "--nsfw")
+            VIDS_SHOW_NSFW=true     ; shift ;;
+        "--no-nsfw")
+            VIDS_SHOW_NSFW=false    ; shift ;;
+
+        "-m"|"--menu")
+            if [ $# -lt 2 ]; then
+                _pemx "$1 option requires 1 argument"
+            fi
+            case "$2" in
+                fzf|dmenu|rofi) VIDS_MENU="$2"; shift 2 ;;
+                *) _pemx "'$2' is not supported as a menu, use instead : fzf , dmenu , rofi." ;;
+            esac
+            ;;
+        "--fzf"|"--dmenu"|"--rofi"|"--print"|"--print-json"|"--print-link")
+            VIDS_MENU="${1#??}"     ; shift ;;
+        "--")
+            shift ; break ;;
+        "-"*)
+            _pemx "$1 in not a supported option" ;;
+        *)  break ;;
+    esac
+done
+
+case "${VIDS_PLTFRM}" in
     "ytrending")
-            VIDSBRND="Youtube Trending"
-            VIDSMTHD="GET"
-            VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://www.youtube.com/feed/trending"
-            query="US"
-            VIDSPRMT1="gl"
-            VIDSPRMT2="pbj=1"
-            VIDSHDR1="x-youtube-client-name:1"
-            VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
-            VIDSJSN1=".[1].response"
-            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+            if [ "${VIDS_YOUTUBE_PIPED}" = true ]; then
+                VIDSBRND="Youtube Trending (Piped)"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="${VIDS_PIPEDAPI_URL}/trending"
+                query="US"
+                VIDSPRMT1="region"
+                VIDSPRMT2=""
+                VIDSHDR1=""
+                VIDSHDR2=""
+                VIDSJSN1=""
+                VIDSJSN2='[ .[] |{ title: .title, channel: .uploaderName, duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: .uploadedDate, videoURL: "https://youtube.com/\(.url[9:])", }]'
+            else
+                VIDSBRND="Youtube Trending"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="https://www.youtube.com/feed/trending"
+                query="US"
+                VIDSPRMT1="gl"
+                VIDSPRMT2="pbj=1"
+                VIDSHDR1="x-youtube-client-name:1"
+                VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
+                VIDSJSN1=".[1].response"
+                VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+            fi
              ;;
     "youtube")
-            VIDSBRND="Youtube"
-            VIDSMTHD="GET"
-            VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://www.youtube.com/results"
-            VIDSPRMT1="search_query"
-            VIDSPRMT2="pbj=1"
-            VIDSHDR1="x-youtube-client-name:1"
-            VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
-            VIDSJSN1=".[1].response"
-            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:.lengthText.simpleText, views: .shortViewCountText.simpleText, date: .publishedTimeText.simpleText, videoURL: "https://youtu.be/\(.videoId)", }]'
+            if [ "${VIDS_YOUTUBE_PIPED}" = true ]; then
+                VIDSBRND="Youtube (Piped)"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="${VIDS_PIPEDAPI_URL}/search"
+                VIDSPRMT1="q"
+                VIDSPRMT2="filter=videos"
+                VIDSHDR1=""
+                VIDSHDR2=""
+                VIDSJSN1=".items"
+                VIDSJSN2='[ .[] |{ title: .name , channel: .uploader ,duration:"\(if .duration == -1 then "Livestream" elif .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views" , date: "\(.uploadDate // "Right now")", videoURL: "https://youtu.be/\(.url[9:])", }]'
+            else
+                VIDSBRND="Youtube"
+                VIDSMTHD="GET"
+                VIDSPRMT="-G --data-urlencode"
+                VIDSURL="https://www.youtube.com/results?sp=EgIQAQ%253D%253D"
+                VIDSPRMT1="search_query"
+                VIDSPRMT2="pbj=1"
+                VIDSHDR1="x-youtube-client-name:1"
+                VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
+                VIDSJSN1=".[1].response"
+                VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:"\(.lengthText.simpleText // "Livestream")", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
+            fi
              ;;
     "peertube")
             VIDSBRND="PeerTube"
             VIDSMTHD="GET"
             VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://sepiasearch.org/api/v1/search/videos"
+            VIDSURL="${VIDS_PEERTUBE_URL}/api/v1/search/videos"
             VIDSPRMT1="search"
-            VIDSPRMT2="count=20"
+            VIDSPRMT2="count=40"
             VIDSHDR1=""
             VIDSHDR2=""
             VIDSJSN1=".data"
-            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration: .duration, views: .views, date: .publishedAt, videoURL: .url, }]'
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel.displayName,duration:"\(if .duration == 0 then "Livestream" elif .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: .publishedAt| sub("(?<time>.*)\\.[\\d]{3}(?<tz>.*)"; "\(.time)\(.tz)")|strptime("%Y-%m-%dT%H:%M:%SZ")|strftime("%Y-%m-%d"), videoURL: .url, }]'
              ;;
     "bitchute")
-            BTCTCOKY="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7" 
+            BTCTCSRF="zyG6tQcGPE5swyAEFLqKUwMuMMuF6IO2DZ6ZDQjGfsL0e4dcTLwqkTTul05Jdve7"
             VIDSBRND="BitChute"
             VIDSMTHD="POST"
             VIDSPRMT="-d"
             VIDSURL="https://www.bitchute.com/api/search/list/"
             VIDSPRMT1="query"
-            VIDSPRMT2="csrfmiddlewaretoken=${BTCTCOKY}"
-            VIDSHDR1="cookie: csrftoken=${BTCTCOKY};"
+            VIDSPRMT2="csrfmiddlewaretoken=${BTCTCSRF}"
+            VIDSHDR1="cookie: csrftoken=${BTCTCSRF};"
             VIDSHDR2="referer: https://www.bitchute.com/"
             VIDSJSN1=".results"
-            VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: .views, date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
+            VIDSJSN2='[ .[] |{ title: .name, channel: .channel_name, duration: .duration, views: "\(.views) views", date: .published, videoURL: "https://www.bitchute.com\(.path)", }]'
              ;;
     "tedtalk")
             VIDSBRND="TED Talks"
@@ -144,13 +274,14 @@ case "${pltfrm}" in
             VIDSBRND="LBRY"
             VIDSMTHD="GET"
             VIDSPRMT="-G --data-urlencode"
-            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video"
+            VIDSURL="https://lighthouse.lbry.com/search?size=80&from=0&claimType=file&mediaType=video&include=view_cnt"
+            [ "${VIDS_SHOW_NSFW}" = true ] && VIDSURL="${VIDSURL}&nsfw=true"
             VIDSPRMT1="s"
             VIDSPRMT2="resolve=true"
             VIDSHDR1=""
             VIDSHDR2=""
             VIDSJSN1=""
-            VIDSJSN2='[ .[] |{ title: .title, channel: .channel ,duration: .duration, views: "0", date: .release_time, videoURL: "https://www.odysee.com/\(.channel)/\(.name)", }]'
+            VIDSJSN2='[ .[] |{ title: .title, channel: .channel ,duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.view_cnt) views", date: .release_time|strptime("%Y-%m-%dT%H:%M:%SZ")|strftime("%Y-%m-%d"), videoURL: "https://www.odysee.com/\(.channel)/\(.name)", }]'
              ;;
 esac
 
@@ -181,6 +312,21 @@ vids_jsondata=$(curl -X ${VIDSMTHD} "${VIDSURL}" -s \
 
 vids_jsonvdata=$(printf '%s' "${vids_jsondata}" | jq -r "${VIDSJSN1}" | jq -r "${VIDSJSN2}")
 
+case "$VIDS_MENU" in
+    "print")
+            printf '%s' "${vids_jsonvdata}" | jq -r '.[]| "[\(.channel)] -- \(.title) -- [\(.duration)] -- \(.date) -- \(.videoURL)"'
+            exit 0
+            ;;
+    "print-json")
+            printf '%s' "${vids_jsonvdata}"
+            exit 0
+            ;;
+    "print-link")
+            printf '%s' "${vids_jsonvdata}" | jq -r '.[]|.videoURL'
+            exit 0
+            ;;
+esac
+
 while :; do
     video_url=$(printf '%s' "${vids_jsonvdata}" \
         | jq -r '.[]| "[\(.channel)] -- \(.title) -- [\(.duration)] -- \(.date) -- \(.videoURL)"' \
@@ -192,5 +338,5 @@ while :; do
     [ -z "${video_url}" ] && exit 0
 
     # shellcheck disable=SC2086
-    printf '%s\n' ${video_url} | mpv --playlist=-
+    printf '%s\n' ${video_url} | xargs $VIDS_PLAYER
 done
