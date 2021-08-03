@@ -97,7 +97,7 @@ _choose(){
                         printf 'output = "%s"\n' "/tmp/vids-thumbs/$(echo ${line% --*}|sed 's/\//∕/').jpg"
                     done | curl -Z --parallel-max 10 -L -H "accept-encoding:gzip" --compressed -K -
 
-                video_url=$(sxiv -o -p -t -z 100 /tmp/vids-thumbs/ |\
+                video_url=$(sxiv -o -p -t /tmp/vids-thumbs/ |\
                     while read -r line ; do
                         line=${line##*/}
                         line=${line%.jpg}
