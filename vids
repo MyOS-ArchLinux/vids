@@ -4,6 +4,7 @@ VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
 VIDS_PLAYER_ARGS="${VIDS_DEFAULT_PLAYER_ARGS:- }" # Default Player Arguments
+VIDS_ONE_SHOT="${VIDS_ONE_SHOT:-false}"
 VIDS_SHOW_NSFW="${VIDS_SHOW_NSFW:-false}"         # Include NSFW video
 VIDS_YOUTUBE_PIPED=${VIDS_YOUTUBE_PIPED:-false}   # Use youtube alternative front-end Piped
 VIDS_PIPEDAPI_URL="${VIDS_PIPEDAPI_URL:-https://pipedapi.kavin.rocks}" # https://github.com/TeamPiped/Piped/wiki/Instances
@@ -104,6 +105,7 @@ usage() {
     _pht "  Player Options:"
     _phi "-P, --player COMMAND     Player to feed urls to."
     _phi "-a, --player-args ARGS   Customize the arguments which are put together with the value of --player to create a command to execute."
+    _phi "-e, --exit               don't prompt selector again after the player close"
     _pht
     _pht "  Scripting Options:"
     _phi "--print-json             print results json to stdout and exit."
@@ -144,17 +146,17 @@ while [ "$1" ]; do
                 *) _pemx "'$2' platform is not supported yet! if you wanted us to add it, open an issues on our github: https://github.com/MyOS-ArchLinux/vids" ;;
             esac
             ;;
-        "-ytr"|"--ytrending")
+        "-ytr"|"--ytr"|"--ytrending")
             VIDS_PLTFRM="ytrending" ; shift ;;
-        "-yt"|"--youtube")
+        "-yt"|"--yt"|"--youtube")
             VIDS_PLTFRM="youtube"   ; shift ;;
-        "-pt"|"--peertube")
+        "-pt"|"--pt"|"--peertube")
             VIDS_PLTFRM="peertube"  ; shift ;;
-        "-bc"|"--bitchute")
+        "-bc"|"--bc"|"--bitchute")
             VIDS_PLTFRM="bitchute"  ; shift ;;
-        "-ted"|"--tedtalk")
+        "-ted"|"--ted"|"--tedtalk")
             VIDS_PLTFRM="tedtalk"   ; shift ;;
-        "-lb"|"--lbry"|"--odysee")
+        "-lb"|"--lb"|"--lbry"|"--odysee")
             VIDS_PLTFRM="lbry"      ; shift ;;
 
         "--piped")
@@ -189,6 +191,9 @@ while [ "$1" ]; do
                 _pemx "$1 option requires 1 argument"
             fi
             VIDS_PLAYER_ARGS="${2}" ; shift 2 ;;
+
+        "-e"|"--exit")
+            VIDS_ONE_SHOT=true ; shift ;;
 
         "--")
             shift ; break ;;
@@ -357,4 +362,6 @@ while :; do
 
     # shellcheck disable=SC2086
     ${VIDS_PLAYER} ${VIDS_PLAYER_ARGS} ${video_url}
+
+    [ "${VIDS_ONE_SHOT}" = true ] && exit 0
 done
