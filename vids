@@ -44,8 +44,8 @@ fi
 
 _input(){
     case "$VIDS_MENU" in
-        "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Video:" ;;
-        "rofi")  printf '' | rofi -dmenu -p "Search ${VIDSBRND} Video" -l 0 ;;
+        "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Videos:" ;;
+        "rofi")  printf '' | rofi -dmenu -p "Search ${VIDSBRND} Videos" -l 0 ;;
         "fzf"|"print"|"print-json"|"print-link") read -r query && echo "${query}" ;;
     esac
 }
@@ -53,8 +53,9 @@ _input(){
 _choose(){
     case "$VIDS_MENU" in
         "dmenu") dmenu -i -p 'Select Video:' -l 20 ;;
-        "rofi")  rofi -dmenu -i -p 'Select Video' -width 90 -l 20 -multi-select -no-click-to-exit ;;
-        "fzf")   fzf -i -e --with-nth='1..-3' --multi --cycle --bind=ctrl-t:toggle-all --header='Select Video:' ;;
+        "rofi")  rofi -dmenu -i -p 'Select Videos' -width 90 -l 20 -multi-select -no-click-to-exit -mesg "Search ${VIDSBRND} Videos: ${query}" ;;
+        "fzf")   fzf -i -e --with-nth='1..-3' --multi --cycle --bind=ctrl-t:toggle-all --header='Select Videos:' \
+                     --bind "ctrl-c:execute-silent(awk '{print \$NF}' {+f} | xclip -selection clipboard && notify-send 'copyed!!')" ;;
     esac
 }
 
@@ -361,7 +362,7 @@ while :; do
     [ -z "${video_url}" ] && exit 0
 
     # shellcheck disable=SC2086
-    ${VIDS_PLAYER} ${VIDS_PLAYER_ARGS} ${video_url}
+    ${VIDS_PLAYER:?} ${VIDS_PLAYER_ARGS:-} ${video_url}
 
     [ "${VIDS_ONE_SHOT}" = true ] && exit 0
 done
