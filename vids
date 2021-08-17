@@ -32,16 +32,6 @@ _pemx() {
     >&2 printf '\033[31;1merror :\033[m %s\n' "$1" && exit 1
 }
 
-if [ -n "${VIDS_MENU}" ] && has "${VIDS_MENU}" ; then
-    VIDS_MENU="${VIDS_MENU}"
-elif has 'rofi' ; then
-    VIDS_MENU="rofi"
-elif has 'dmenu'; then
-    VIDS_MENU="dmenu"
-elif has 'fzf'; then
-    VIDS_MENU="fzf"
-fi
-
 _input(){
     case "$VIDS_MENU" in
         "dmenu") printf '' | dmenu -p "Search ${VIDSBRND} Videos:" ;;
@@ -203,6 +193,16 @@ while [ "$1" ]; do
         *)  break ;;
     esac
 done
+
+if [ -n "${VIDS_MENU}" ] && has "${VIDS_MENU}" ; then
+    VIDS_MENU="${VIDS_MENU}"
+elif has 'rofi' ; then
+    VIDS_MENU="rofi"
+elif has 'dmenu'; then
+    VIDS_MENU="dmenu"
+elif has 'fzf'; then
+    VIDS_MENU="fzf"
+fi
 
 case "${VIDS_PLTFRM}" in
     "ytrending")
