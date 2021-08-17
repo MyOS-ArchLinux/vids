@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-VERSION=0.2
+VERSION=0.3
 VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
