@@ -58,6 +58,11 @@ Options:
     --dmenu                  An alias for --menu dmenu
     --rofi                   An alias for --menu rofi
 
+  Player Options:
+    -P, --player COMMAND     Player to feed urls to.
+    -a, --player-args ARGS   Customize the arguments which are put together with the value of --player to create a command to execute.
+    -e, --exit               don't prompt selector again after the player close
+
   Scripting Options:
     --print-json             print results json to stdout and exit.
     --print-link             print results links to stdout and exit.
@@ -67,6 +72,7 @@ Options:
     VIDS_DEFAULT_MENU        Default menu to use. (default: rofi -> dmenu -> fzf)
     VIDS_DEFAULT_PLATFORM    Default platform to use. (default: youtube)
     VIDS_DEFAULT_PLAYER      Default video player to use. (default: mpv)
+    VIDS_DEFAULT_PLAYER_ARGS Default arguments which are passed to the player. (default: empty)
     VIDS_SHOW_NSFW           Always include NSFW videos (default: false)
     VIDS_YOUTUBE_PIPED       Use Piped; the privacy-friendly YouTube frontend. (default: false )
     VIDS_PIPEDAPI_URL        Piped Instance API URL. (default: https://pipedapi.kavin.rocks )
