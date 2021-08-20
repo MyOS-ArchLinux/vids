@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-VERSION=0.3
+VERSION=0.3.1
 VIDS_MENU="${VIDS_DEFAULT_MENU:-}"                # Default Menu
 VIDS_PLTFRM="${VIDS_DEFAULT_PLATFORM:-youtube}"   # Default Platform
 VIDS_PLAYER="${VIDS_DEFAULT_PLAYER:-mpv}"         # Default Player
@@ -271,6 +271,30 @@ case "${VIDS_PLTFRM}" in
                 VIDSHDR2=""
                 VIDSJSN1=".items"
                 VIDSJSN2='[ .[] |{ title: .name , channel: .uploader ,duration:"\(if .duration == -1 then "Livestream" elif .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views" , date: "\(.uploadDate // "Right now")", videoURL: "https://youtu.be/\(.url[9:])", }]'
+                case "$1" in
+                    *"/channel/"*|*"/c/"*|*"/user/"*)
+                        [ $# -eq 1 ] ||  _pemx "piped doesn't supports search in channels"
+                        VIDSBRND="Youtube Channel (Piped)"
+                        VIDSURL="${VIDS_PIPEDAPI_URL}/$(printf '%s\n' "$1" | awk '{split($0,a,"/"); print a[4]"/"a[5] }')"
+                        VIDSJSN1=".relatedStreams"
+                        VIDSJSN2='[ .[] |{ title: .title, channel: .uploaderName, duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: "\(.uploadedDate // " - ")", videoURL: "https://youtu.be/\(.url[9:])", }]'
+                        VIDSPRMT1="region"
+                        VIDSPRMT2=""
+                        query="-"
+                        shift
+                        ;;
+                    *"/playlist?list="*)
+                        [ $# -eq 1 ] ||  _pemx "piped doesn't supports search in playlist"
+                        VIDSBRND="Youtube Playlist (Piped)"
+                        VIDSURL="${VIDS_PIPEDAPI_URL}/$(printf '%s\n' "$1" | awk '{split($0,a,"="); print "playlists/"a[2] }')"
+                        VIDSJSN1=".relatedStreams"
+                        VIDSJSN2='[ .[] |{ title: .title, channel: .uploaderName, duration:"\(if .duration <= 3600 then "\(.duration|strftime("%M:%S"))" else "\(.duration|strftime("%H:%M:%S"))" end)", views: "\(.views) views", date: "\(.uploadedDate // " - ")", videoURL: "https://youtu.be/\(.url[9:])", }]'
+                        VIDSPRMT1="region"
+                        VIDSPRMT2=""
+                        query="-"
+                        shift
+                        ;;
+                esac
             else
                 VIDSBRND="Youtube"
                 VIDSMTHD="GET"
@@ -282,6 +306,33 @@ case "${VIDS_PLTFRM}" in
                 VIDSHDR2="x-youtube-client-version:2.20200214.04.00"
                 VIDSJSN1=".[1].response"
                 VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .longBylineText.runs[0].text, duration:"\(.lengthText.simpleText // "Livestream")", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
+                case "$1" in
+                    *"/channel/"*|*"/c/"*|*"/user/"*)
+                        if [ $# -eq 1 ] ;then
+                            VIDSBRND="Youtube Channel"
+                            VIDSURL="https://www.youtube.com/$(printf '%s\n' "$1" | awk '{split($0,a,"/"); print a[4]"/"a[5] }')/videos"
+                            query="-"
+                            VIDSPRMT1="gl"
+                            VIDSJSN2='[ .contents|..|.gridVideoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: "@", duration:"\(.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText)", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
+                            shift
+                        else
+                            VIDSBRND="Youtube Channel Search"
+                            VIDSPRMT1="query"
+                            VIDSURL="https://www.youtube.com/$(printf '%s\n' "$1" | awk '{split($0,a,"/"); print a[4]"/"a[5] }')/search"
+                            VIDSJSN2='[ .contents|..|.videoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .shortBylineText.runs[0].text, duration:"\(.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText)", views: "\(.shortViewCountText.simpleText // "\(.shortViewCountText.runs[0].text) watching")", date: "\(.publishedTimeText.simpleText // "Right now")", videoURL: "https://youtu.be/\(.videoId)", }]'
+                            shift
+                        fi
+                        ;;
+                    *"/playlist?list="*)
+                        [ $# -eq 1 ] ||  _pemx "youtube doesn't supports search in playlist"
+                        VIDSBRND="Youtube Playlist"
+                        VIDSURL="https://www.youtube.com/playlist?list=$(printf '%s\n' "$1" | awk '{split($0,a,"="); print a[2] }')"
+                        query="-"
+                        VIDSPRMT1="gl"
+                        VIDSJSN2='[ .contents|..|.playlistVideoRenderer? | select(. !=null) | { title: .title.runs[0].text, channel: .shortBylineText.runs[0].text, duration:"\(.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText)", views: "-", date: "-", videoURL: "https://youtu.be/\(.videoId)", }]'
+                        shift
+                        ;;
+                esac
             fi
              ;;
     "peertube")
